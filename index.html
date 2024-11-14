@@ -363,6 +363,25 @@
 
 <body class="" style="visibility: hidden;">
 
+<h2>Send a Message to Telegram Bot via WebApp</h2>
+<form id="messageForm">
+    <label for="message">Enter your message:</label><br><br>
+    <textarea id="message" name="message" rows="4" cols="50"></textarea><br><br>
+    <button type="button" onclick="sendDataToBot()">Send to Bot</button>
+</form>
+
+<script>
+    function sendDataToBot() {
+        const message = document.getElementById('message').value;
+
+        // Use Telegram WebApp API to send data to the bot
+        Telegram.WebApp.sendData(message);
+
+        // Optionally, close the WebApp if you wish
+        // Telegram.WebApp.close();
+    }
+</script>
+
 <section id="top_sect" class="second">
     <button id="main_btn" onclick="DemoApp.sendMessage('');">Send «Hello, World!»</button>
     <button id="with_webview_btn" onclick="DemoApp.sendMessage('', true);">Send «Hello, World!» with inline webview button</button>
