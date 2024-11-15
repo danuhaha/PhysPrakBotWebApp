@@ -358,27 +358,35 @@
             font-size: 12px;
             margin: 4px 0;
         }
+        #messageForm {
+            text-align: center;
+        }
+
+        math-field {
+            width: 80%;
+            font-size: 1.5em;
+        }
     </style>
+    <script src="https://unpkg.com/mathlive/dist/mathlive.min.js"></script>
 </head>
 
 <body class="" style="visibility: hidden;">
 
-<h2>Send a Message to Telegram Bot via WebApp</h2>
+<h2>Send a Math Expression to Telegram Bot via WebApp</h2>
 <form id="messageForm">
-    <label for="message">Enter your message:</label><br><br>
-    <textarea id="message" name="message" rows="4" cols="50"></textarea><br><br>
+    <label for="mathInput">Enter your math expression:</label><br><br>
+    <!-- Larger MathField from MathLive -->
+    <math-field id="mathInput" virtual-keyboard-mode="onfocus"></math-field><br><br>
     <button type="button" onclick="sendDataToBot()">Send to Bot</button>
 </form>
 
 <script>
     function sendDataToBot() {
-        const message = document.getElementById('message').value;
+        // Get the content from MathField
+        const mathInput = document.getElementById('mathInput').getValue();
 
         // Use Telegram WebApp API to send data to the bot
-        Telegram.WebApp.sendData(message);
-
-        // Optionally, close the WebApp if you wish
-        // Telegram.WebApp.close();
+        Telegram.WebApp.sendData(mathInput);
     }
 </script>
 
