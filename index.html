@@ -377,13 +377,16 @@
     <label for="mathInput">Enter your math expression:</label><br><br>
     <!-- Larger MathField from MathLive -->
     <math-field id="mathInput" virtual-keyboard-mode="onfocus"></math-field><br><br>
+    <label for="uncertainties">Enter uncertain variables:</label><br><br>
+    <!-- Larger MathField from MathLive -->
+    <math-field id="uncertainties" virtual-keyboard-mode="onfocus"></math-field><br><br>
     <button type="button" onclick="sendDataToBot()">Send to Bot</button>
 </form>
 
 <script>
     function sendDataToBot() {
         // Get the content from MathField
-        const mathInput = document.getElementById('mathInput').getValue();
+        const mathInput = document.getElementById('mathInput').getValue() + ',' + document.getElementById('uncertainties').getValue();
 
         // Use Telegram WebApp API to send data to the bot
         Telegram.WebApp.sendData(mathInput);
