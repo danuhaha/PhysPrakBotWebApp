@@ -386,7 +386,7 @@
 <script>
     function sendDataToBot() {
         // Get the content from MathField
-        const mathInput = document.getElementById('mathInput').getValue() + '.' + document.getElementById('uncertainties').getValue();
+        const mathInput = document.getElementById('mathInput').getValue() + ';' + document.getElementById('uncertainties').getValue();
 
         // Use Telegram WebApp API to send data to the bot
         Telegram.WebApp.sendData(mathInput);
