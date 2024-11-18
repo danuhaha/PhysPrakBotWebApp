@@ -46,6 +46,10 @@
             margin: 2px 10px 5px 10px;
         }
 
+        math-field::part(placeholder) {
+            color: var(--tg-theme-hint-color, #999);
+        }
+
         button {
             display: block;
             width: 50%;
@@ -69,10 +73,10 @@
 <body class="" style="visibility: visible;">
 <form id="messageForm">
     <label for="mathInput">Введите формулу:</label><br><br>
-    <math-field id="mathInput" virtual-keyboard-mode="onfocus"  show-toolbar="false"></math-field><br><br>
+    <math-field id="mathInput" virtual-keyboard-mode="onfocus" placeholder='\frac{I\beta^2}{2\theta}' ></math-field><br><br>
     <label for="uncertainties">Укажите переменные с погрешностью:</label><br>(без пробелов или запятых)<br><br>
-    <math-field id="uncertainties" virtual-keyboard-mode="onfocus"></math-field><br><br>
-    <button type="button" onclick="sendDataToBot()">Рассчитать косвенную погрешность</button>
+    <math-field id="uncertainties" virtual-keyboard-mode="onfocus" placeholder='\beta\theta'></math-field><br><br>
+    <button type="button" onclick="sendDataToBot()">Рассчитать погрешность</button>
 </form>
 
 <script>
