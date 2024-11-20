@@ -12,7 +12,10 @@
     <meta name="HandheldFriendly" content="True"/>
     <meta name="robots" content="noindex,nofollow"/>
 
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+          rel="stylesheet">
 
     <script src="https://telegram.org/js/telegram-web-app.js?2"></script>
     <script src="https://unpkg.com/mathlive/dist/mathlive.min.js"></script>
@@ -29,10 +32,13 @@
     <style>
         body {
             --bg-color: var(--tg-theme-bg-color, #fff);
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            font-optical-sizing: auto;
+            font-style: normal;
+            font-size: 16px;
             background-color: var(--bg-color);
             color: var(--tg-theme-text-color, #222);
-            font-size: 14px;
             margin: 0;
             padding: 0;
             color-scheme: var(--tg-color-scheme);
@@ -40,18 +46,38 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         form {
-            text-align: center;
+            text-align: left;
             width: 90%;
-            max-width: 600px;
+            max-width: 350px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        label {
+            font-weight: 400;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .description {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
         }
 
         math-field {
-            width: 80%;
-            font-size: 1.5em;
-            margin: 2px 10px 5px 10px;
+            width: 100%;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
 
         math-field::part(menu-toggle) {
@@ -59,7 +85,7 @@
         }
 
         math-field::part(virtual-keyboard-toggle) {
-            color: var(--tg-theme-button-color, #50a8eb);
+            color: var(--tg-theme-button-color, #999);
         }
 
         math-field::part(placeholder) {
@@ -67,28 +93,68 @@
         }
 
         button {
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            font-optical-sizing: auto;
+            font-style: normal;
             display: block;
-            width: 50%;
-            font-size: 14px;
-            margin: 15px auto;
-            padding: 12px 20px;
+            width: 100%;
+            font-size: 16px;
+            margin: 20px 0;
+            padding: 12px;
             border: none;
             border-radius: 4px;
-            background-color: var(--tg-theme-button-color, #50a8eb);
-            color: var(--tg-theme-button-text-color, #ffffff);
+            background-color: #333;
+            color: #ffffff;
             cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #444;
+        }
+
+        /* Dark theme styles */
+        .dark body {
+            --bg-color: #222;
+            --tg-theme-text-color: #fff;
+        }
+
+        .dark form {
+            background-color: #333;
+            border-color: #444;
+        }
+
+        .dark .description {
+            color: #bbb;
+        }
+
+        .dark math-field {
+            background-color: #444;
+            border-color: #555;
+            color: #eee;
+        }
+
+        .dark button {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        /* Light theme styles */
+        .light form {
+            background-color: #fff;
+            border-color: #ddd;
         }
     </style>
 </head>
 
 <body class="" style="visibility: visible;">
 <form id="messageForm">
-    <label for="mathInput">Введите формулу:</label><br><br>
+    <label for="mathInput">Формула</label>
     <math-field id="mathInput" virtual-keyboard-mode="onfocus" placeholder='\frac{I\beta^2}{2\theta}'></math-field>
-    <br><br>
-    <label for="uncertainties">Укажите переменные с погрешностью:</label><br>(без пробелов или запятых)<br><br>
+    <label for="uncertainties">Переменные с погрешностью</label>
+    <div class="description">Без пробелов или запятых</div>
     <math-field id="uncertainties" virtual-keyboard-mode="onfocus" placeholder='\beta\theta'></math-field>
-    <br><br>
     <button type="button" onclick="sendDataToBot()">Рассчитать погрешность</button>
 </form>
 
