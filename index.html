@@ -31,14 +31,14 @@
 
     <style>
         body {
-            --bg-color: #fff;
+            --bg-color: var(--tg-theme-bg-color, #fff);
             font-family: 'Inter', sans-serif;
             font-weight: 400;
             font-optical-sizing: auto;
             font-style: normal;
             font-size: 16px;
-            background-color:  #fff;
-            color:  #222;
+            background-color: var(--bg-color);
+            color: var(--tg-theme-text-color, #222);
             margin: 0;
             padding: 0;
             color-scheme: var(--tg-color-scheme);
