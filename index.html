@@ -31,25 +31,33 @@
 
     <style>
         body {
-            --bg-color: var(--tg-theme-bg-color, #fff);
+            --keyboard-accent-color: #666;
             font-family: 'Inter', sans-serif;
             font-weight: 400;
             font-optical-sizing: auto;
             font-style: normal;
             font-size: 16px;
-            background-color: var(--bg-color);
-            color: var(--tg-theme-text-color, #222);
+            background-color: #fff;
+            color: #222;
             margin: 0;
             padding: 0;
             color-scheme: var(--tg-color-scheme);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             height: 100vh;
             transition: background-color 0.3s, color 0.3s;
         }
 
+        .dark body {
+            --keyboard-accent-color: #999;
+            background-color: #222;
+            color: #fff;
+        }
+
         form {
+            background-color: #fff;
+            border-color: #ddd;
             text-align: left;
             width: 90%;
             max-width: 300px;
@@ -57,6 +65,12 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             transition: background-color 0.3s, border-color 0.3s;
+            margin-top: 20px;
+        }
+
+        .dark form {
+            background-color: #333;
+            border-color: #444;
         }
 
         label {
@@ -71,6 +85,10 @@
             margin-bottom: 10px;
         }
 
+        .dark .description {
+            color: #bbb;
+        }
+
         math-field {
             width: 99.3%;
             font-size: 1em;
@@ -78,6 +96,12 @@
             padding: 0px;
             border: 1px solid #ccc;
             border-radius: 4px;
+        }
+
+        .dark math-field {
+            background-color: #444;
+            border-color: #555;
+            color: #eee;
         }
 
         math-field::part(menu-toggle) {
@@ -115,40 +139,13 @@
             transition: background-color 0.3s;
         }
 
-        button:hover {
-            background-color: #444;
-        }
-
-        /* Dark theme styles */
-        .dark body {
-            --bg-color: #222;
-            --tg-theme-text-color: #fff;
-        }
-
-        .dark form {
-            background-color: #333;
-            border-color: #444;
-        }
-
-        .dark .description {
-            color: #bbb;
-        }
-
-        .dark math-field {
-            background-color: #444;
-            border-color: #555;
-            color: #eee;
-        }
-
         .dark button {
             background-color: #f0f0f0;
             color: #333;
         }
 
-        /* Light theme styles */
-        .light form {
-            background-color: #fff;
-            border-color: #ddd;
+        button:hover {
+            background-color: #444;
         }
     </style>
 </head>
@@ -164,24 +161,55 @@
 </form>
 
 <script>
-    // Layout for mathfield mathInput
-    document.getElementById('mathInput').addEventListener('focusin', () => {
+    document.getElementById('mathInput').addEventListener("keydown", (evt) =>
+        evt.preventDefault(), {capture: true});
+
+    document.getElementById('uncertainties').addEventListener("keydown", (evt) =>
+        evt.preventDefault(), {capture: true});
+
+    document.getElementById('mathInput').addEventListener('focus', () => {
         mathVirtualKeyboard.layouts = "default";
     });
 
-    // Layout for mathfield uncertainties
-    document.getElementById('uncertainties').addEventListener('focusin', () => {
-        mathVirtualKeyboard.layouts = ['alphabetic', 'greek'];
+    document.getElementById('uncertainties').addEventListener('focus', () => {
+        mathVirtualKeyboard.layouts = ['alphabetic', 'greek',
+            {
+                label: 'lol',
+                rows: [
+                    [
+                        '[7]', '[8]', '[9]', '[+]',
+                        {label: '[separator]', width: 0.5},
+                        {class: 'small', latex: '\\frac{#@}{#0}'},
+                        '\\varnothing', '\\infty', '\\in', '\\notin',
+                        '[separator]',
+                    ],
+                    [
+                        '[4]', '[5]', '[6]', '[-]',
+                        {label: '[separator]', width: 0.5},
+                        '[(]', '[)]', '\\lt', '\\le', '\\hat{=}', '[separator]',
+                    ],
+                    [
+                        '[1]', '[2]', '[3]', '\\cdot',
+                        {label: '[separator]', width: 0.5},
+                        '[', ']', '\\gt', '\\ge',
+
+                        {label: '[backspace]', width: 2},
+                    ],
+                    [
+                        {label: '[0]', width: 2}, '[.]', '\\colon',
+                        {label: '[separator]', width: 0.5},
+                        '\\lbrace', '\\rbrace', '=', '\\ne', '[left]', '[right]',
+                    ],
+                ],
+            }
+        ];
     });
 </script>
 
 
 <script>
     function sendDataToBot() {
-        // Get the content from MathField
         const mathInput = document.getElementById('mathInput').getValue() + ';' + document.getElementById('uncertainties').getValue();
-
-        // Use Telegram WebApp API to send data to the bot
         Telegram.WebApp.sendData(mathInput);
     }
 </script>
