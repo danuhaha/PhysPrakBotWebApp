@@ -18,6 +18,7 @@
           rel="stylesheet">
 
     <script src="https://telegram.org/js/telegram-web-app.js?2"></script>
+
     <script src="https://unpkg.com/mathlive/dist/mathlive.min.js"></script>
 
     <script>
@@ -85,6 +86,19 @@
             margin-bottom: 10px;
         }
 
+        .warning {
+            color: rgba(255, 0, 38, 0.75);
+            font-size: 0.9em;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            padding-top: 5px;
+        }
+
+        .warning.show {
+            opacity: 1;
+
+        }
+
         .dark .description {
             color: #bbb;
         }
@@ -92,7 +106,6 @@
         math-field {
             width: 99.3%;
             font-size: 1em;
-            margin-bottom: 20px;
             padding: 0px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -134,18 +147,27 @@
             border: none;
             border-radius: 4px;
             background-color: #333;
-            color: #ffffff;
+            color: #fff;
             cursor: pointer;
             transition: background-color 0.3s;
         }
 
         .dark button {
-            background-color: #f0f0f0;
+            background-color: #fff;
             color: #333;
         }
 
-        button:hover {
+        button:disabled {
+            background-color: #777;
+            cursor: not-allowed;
+        }
+
+        button:hover:enabled {
             background-color: #444;
+        }
+
+        .dark button:hover {
+            background-color: #d5d5d5;
         }
     </style>
 </head>
@@ -153,12 +175,94 @@
 <body class="" style="visibility: visible;">
 <form id="messageForm">
     <label for="mathInput">Формула</label>
-    <math-field id="mathInput" virtual-keyboard-mode="onfocus" placeholder='\frac{I\beta^2}{2\theta}'></math-field>
+    <math-field style="margin-bottom: 20px;" id="mathInput" virtual-keyboard-mode="onfocus" placeholder='\frac{I\beta^2}{2\theta}'></math-field>
     <label for="uncertainties">Переменные с погрешностью</label>
     <div class="description">Без пробелов или запятых</div>
-    <math-field id="uncertainties" virtual-keyboard-mode="onfocus" placeholder='\beta\theta'></math-field>
-    <button type="button" onclick="sendDataToBot()">Рассчитать погрешность</button>
+    <math-field  id="uncertainties" virtual-keyboard-mode="onfocus" placeholder='\beta\theta'></math-field>
+    <div id="warning" class="warning">Некоторые переменные не найдены в формуле</div>
+    <button type="button" id="sendButton" onclick="sendDataToBot()">Рассчитать погрешность</button>
 </form>
+
+<script>
+    function sendDataToBot() {
+        const mathInput = document.getElementById('mathInput').getValue() + ';' + document.getElementById('uncertainties').getValue();
+        Telegram.WebApp.sendData(mathInput);
+    }
+</script>
+
+<script>
+    function checkIfEmpty() {
+        const mathInput = document.getElementById('mathInput');
+        const uncertaintiesInput = document.getElementById('uncertainties');
+        const sendButton = document.getElementById('sendButton');
+
+        const mathInputValue = mathInput.getValue().trim();
+        const uncertaintiesValue = uncertaintiesInput.getValue().trim();
+        console.log(mathInputValue + ',' + uncertaintiesValue);
+
+        if (mathInputValue=='' || uncertaintiesValue=='') {
+            sendButton.disabled = true;
+        } else {
+            sendButton.disabled = false;
+        }
+    }
+
+    document.getElementById('mathInput').addEventListener('input', checkIfEmpty);
+    document.getElementById('uncertainties').addEventListener('input', checkIfEmpty);
+
+    checkIfEmpty();
+</script>
+
+<script>
+    async function checkVariables() {
+        const mathInput = document.getElementById('mathInput');
+        const uncertaintiesInput = document.getElementById('uncertainties');
+
+        const formulaLatex = mathInput.getValue ? mathInput.getValue() : '';
+        const uncertaintiesLatex = uncertaintiesInput.getValue ? uncertaintiesInput.getValue() : '';
+
+        var formulaVariables = [];
+        var uncertaintiesVariables = [];
+
+        try {
+            const response = await fetch('http://207.127.92.16:5000/api/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    formula: formulaLatex,
+                    uncertainties: uncertaintiesLatex,
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                formulaVariables = data.formula.split( ', ' );
+                uncertaintiesVariables = data.uncertainties.split( ', ' );
+            } else {
+                console.log('Error processing request.');
+            }
+        } catch (error) {
+            console.log('Server error. Please try again.');
+        }
+
+        const allPresent = uncertaintiesVariables.every(variable => formulaVariables.includes(variable));
+
+        const warningElement = document.getElementById('warning');
+        const sendButton = document.getElementById('sendButton');
+
+        if (!allPresent) {
+            warningElement.classList.add('show');
+            sendButton.disabled = true;
+        } else {
+            warningElement.classList.remove('show');
+        }
+    }
+
+    document.getElementById('mathInput').addEventListener('input', checkVariables);
+    document.getElementById('uncertainties').addEventListener('input', checkVariables);
+</script>
 
 <script>
     document.getElementById('mathInput').addEventListener("keydown", (evt) =>
@@ -168,50 +272,218 @@
         evt.preventDefault(), {capture: true});
 
     document.getElementById('mathInput').addEventListener('focus', () => {
-        mathVirtualKeyboard.layouts = "default";
-    });
-
-    document.getElementById('uncertainties').addEventListener('focus', () => {
-        mathVirtualKeyboard.layouts = ['alphabetic', 'greek',
+        mathVirtualKeyboard.layouts = [
             {
-                label: 'lol',
+                label: '𝟭𝟮𝟯',
                 rows: [
                     [
-                        '[7]', '[8]', '[9]', '[+]',
-                        {label: '[separator]', width: 0.5},
+                        {label: '[separator]', width: 0.5}, '[(]', '[)]', {label: '[separator]', width: 1},
+                        {label: '7', latex: '7'}, {label: '8', latex: '8'}, {label: '9', latex: '9'}, '[/]'
+                    ],
+                    [
                         {class: 'small', latex: '\\frac{#@}{#0}'},
-                        '\\varnothing', '\\infty', '\\in', '\\notin',
-                        '[separator]',
+                        {'latex': '\\sqrt{#0}', variants: ['\\sqrt[3]{#0}', '\\sqrt[#0]{#0}']},
+                        {'latex': '{#@}^2', variants: ['{#@}^{3}', '{#@}^{#0}']},
+                        {label: '[separator]', width: 0.5},
+                        {label: '4', latex: '4'}, {label: '5', latex: '5'}, {label: '6', latex: '6'}, '[*]'
                     ],
                     [
-                        '[4]', '[5]', '[6]', '[-]',
+                        {'latex': '\\pi', variants: ['\\frac{\\pi}{2}', '\\frac{\\pi}{3}']}, 'e^{#0}',
+                        {'latex': '\\ln', variants: ['\\log_2', '\\log_{10}', '\\log_{#0}']},
                         {label: '[separator]', width: 0.5},
-                        '[(]', '[)]', '\\lt', '\\le', '\\hat{=}', '[separator]',
+                        {label: '1', latex: '1'}, {label: '2', latex: '2'}, {label: '3', latex: '3'}, '[-]'
                     ],
                     [
-                        '[1]', '[2]', '[3]', '\\cdot',
+                        {
+                            'latex': '\\sin',
+                            variants: [{class: 'small', latex: '\\arcsin'}, {class: 'small', latex: '\\sinh'}]
+                        },
+                        {
+                            'latex': '\\cos',
+                            variants: [{class: 'small', latex: '\\arccos'}, {class: 'small', latex: '\\cosh'}]
+                        },
+                        {
+                            'latex': '\\tg',
+                            variants: [{class: 'small', latex: '\\arctg'}, {class: 'small', latex: '\\tanh'}]
+                        },
                         {label: '[separator]', width: 0.5},
-                        '[', ']', '\\gt', '\\ge',
-
+                        {label: '0', latex: '0'}, '[.]', '[=]', '[+]'
+                    ],
+                    [
+                        '[separator]', '[separator]', '[separator]', '[separator]', '[separator]',
+                        '[separator]', '[separator]', '[separator]', '[separator]',
+                        '[left]', '[right]', '[backspace]'
+                    ]
+                ],
+            },
+            {
+                label: '𝙖𝙗𝙘',
+                rows: [
+                    [
+                        {label: '1', latex: '1'}, {label: '2', latex: '2'}, {label: '3', latex: '3'},
+                        {label: '4', latex: '4'}, {label: '5', latex: '5'}, {label: '6', latex: '6'},
+                        {label: '7', latex: '7'}, {label: '8', latex: '8'}, {label: '9', latex: '9'},
+                        {label: '0', latex: '0'}
+                    ],
+                    [
+                        {label: 'q', latex: 'q', shift: {label: 'Q', latex: 'Q'}},
+                        {label: 'w', latex: 'w', shift: {label: 'W', latex: 'W'}},
+                        {label: 'e', latex: 'e', shift: {label: 'E', latex: 'E'}},
+                        {label: 'r', latex: 'r', shift: {label: 'R', latex: 'R'}},
+                        {label: 't', latex: 't', shift: {label: 'T', latex: 'T'}},
+                        {label: 'y', latex: 'y', shift: {label: 'Y', latex: 'Y'}},
+                        {label: 'u', latex: 'u', shift: {label: 'U', latex: 'U'}},
+                        {label: 'i', latex: 'i', shift: {label: 'I', latex: 'I'}},
+                        {label: 'o', latex: 'o', shift: {label: 'O', latex: 'O'}},
+                        {label: 'p', latex: 'p', shift: {label: 'P', latex: 'P'}}
+                    ],
+                    [
+                        {label: 'a', latex: 'a', shift: {label: 'A', latex: 'A'}},
+                        {label: 's', latex: 's', shift: {label: 'S', latex: 'S'}},
+                        {label: 'd', latex: 'd', shift: {label: 'D', latex: 'D'}},
+                        {label: 'f', latex: 'f', shift: {label: 'F', latex: 'F'}},
+                        {label: 'g', latex: 'g', shift: {label: 'G', latex: 'G'}},
+                        {label: 'h', latex: 'h', shift: {label: 'H', latex: 'H'}},
+                        {label: 'j', latex: 'j', shift: {label: 'J', latex: 'J'}},
+                        {label: 'k', latex: 'k', shift: {label: 'K', latex: 'K'}},
+                        {label: 'l', latex: 'l', shift: {label: 'L', latex: 'L'}}
+                    ],
+                    [
+                        {label: '[shift]', width: 2},
+                        {label: 'z', latex: 'z', shift: {label: 'Z', latex: 'Z'}},
+                        {label: 'x', latex: 'x', shift: {label: 'X', latex: 'X'}},
+                        {label: 'c', latex: 'c', shift: {label: 'C', latex: 'C'}},
+                        {label: 'v', latex: 'v', shift: {label: 'V', latex: 'V'}},
+                        {label: 'b', latex: 'b', shift: {label: 'B', latex: 'B'}},
+                        {label: 'n', latex: 'n', shift: {label: 'N', latex: 'N'}},
+                        {label: 'm', latex: 'm', shift: {label: 'M', latex: 'M'}},
                         {label: '[backspace]', width: 2},
                     ],
                     [
-                        {label: '[0]', width: 2}, '[.]', '\\colon',
-                        {label: '[separator]', width: 0.5},
-                        '\\lbrace', '\\rbrace', '=', '\\ne', '[left]', '[right]',
+                        '[separator]', '[separator]', '[separator]', '[separator]', '[separator]',
+                        '[separator]', '[separator]', '[separator]', '[separator]',
+                        {label: '[left]', width: 1}, {label: '[right]', width: 1}
+                    ]
+                ],
+            },
+            {
+                label: '𝛼𝛽𝛾',
+                rows: [
+                    [
+                        {label: '1', latex: '1'}, {label: '2', latex: '2'}, {label: '3', latex: '3'},
+                        {label: '4', latex: '4'}, {label: '5', latex: '5'}, {label: '6', latex: '6'},
+                        {label: '7', latex: '7'}, {label: '8', latex: '8'}, {label: '9', latex: '9'},
+                        {label: '0', latex: '0'}
                     ],
+                    [
+                        {latex: '\\phi', shift: '\\Phi'}, {latex: '\\zeta', shift: '\\Zeta'},
+                        {latex: '\\varepsilon', shift: '\\Epsilon'}, {latex: '\\rho', shift: '\\Rho'},
+                        {latex: '\\tau', shift: '\\Tau'}, {latex: '\\upsilon', shift: '\\Upsilon'},
+                        {latex: '\\theta', shift: '\\Theta'}, {latex: '\\iota', shift: '\\Iota'},
+                        {latex: '\\omicron', shift: '\\Omicron'}, {latex: '\\pi', shift: '\\Pi'},
+                    ],
+                    [
+                        {latex: '\\alpha', shift: '\\Alpha'}, {latex: '\\sigma', shift: '\\Sigma'},
+                        {latex: '\\delta', shift: '\\Delta'}, {latex: '\\phi', shift: '\\Phi'},
+                        {latex: '\\gamma', shift: '\\Gamma'}, {latex: '\\eta', shift: '\\Eta'},
+                        {latex: '\\xi', shift: '\\Xi'}, {latex: '\\kappa', shift: '\\Kappa'},
+                        {latex: '\\lambda', shift: '\\Lambda'},
+                    ],
+                    [
+                        {label: '[shift]', width: 2},
+                        {latex: '\\chi', shift: '\\Chi'},
+                        {latex: '\\psi', shift: '\\Psi'}, {latex: '\\omega', shift: '\\Omega'},
+                        {latex: '\\beta', shift: '\\Beta'}, {latex: '\\nu', shift: '\\Nu'},
+                        {latex: '\\mu', shift: '\\Mu'},
+                        {label: '[backspace]', width: 2},
+                    ],
+                    [
+                        '[separator]', '[separator]', '[separator]', '[separator]', '[separator]',
+                        '[separator]', '[separator]', '[separator]', '[separator]',
+                        {label: '[left]', width: 1}, {label: '[right]', width: 1}
+                    ]
+                ],
+            }
+        ];
+    });
+
+    document.getElementById('uncertainties').addEventListener('focus', () => {
+        mathVirtualKeyboard.layouts = [
+            {
+                label: '𝙖𝙗𝙘',
+                rows: [
+                    [
+                        {label: 'q', latex: 'q', shift: {label: 'Q', latex: 'Q'}},
+                        {label: 'w', latex: 'w', shift: {label: 'W', latex: 'W'}},
+                        {label: 'e', latex: 'e', shift: {label: 'E', latex: 'E'}},
+                        {label: 'r', latex: 'r', shift: {label: 'R', latex: 'R'}},
+                        {label: 't', latex: 't', shift: {label: 'T', latex: 'T'}},
+                        {label: 'y', latex: 'y', shift: {label: 'Y', latex: 'Y'}},
+                        {label: 'u', latex: 'u', shift: {label: 'U', latex: 'U'}},
+                        {label: 'i', latex: 'i', shift: {label: 'I', latex: 'I'}},
+                        {label: 'o', latex: 'o', shift: {label: 'O', latex: 'O'}},
+                        {label: 'p', latex: 'p', shift: {label: 'P', latex: 'P'}}
+                    ],
+                    [
+                        {label: 'a', latex: 'a', shift: {label: 'A', latex: 'A'}},
+                        {label: 's', latex: 's', shift: {label: 'S', latex: 'S'}},
+                        {label: 'd', latex: 'd', shift: {label: 'D', latex: 'D'}},
+                        {label: 'f', latex: 'f', shift: {label: 'F', latex: 'F'}},
+                        {label: 'g', latex: 'g', shift: {label: 'G', latex: 'G'}},
+                        {label: 'h', latex: 'h', shift: {label: 'H', latex: 'H'}},
+                        {label: 'j', latex: 'j', shift: {label: 'J', latex: 'J'}},
+                        {label: 'k', latex: 'k', shift: {label: 'K', latex: 'K'}},
+                        {label: 'l', latex: 'l', shift: {label: 'L', latex: 'L'}}
+                    ],
+                    [
+                        {label: '[shift]', width: 2},
+                        {label: 'z', latex: 'z', shift: {label: 'Z', latex: 'Z'}},
+                        {label: 'x', latex: 'x', shift: {label: 'X', latex: 'X'}},
+                        {label: 'c', latex: 'c', shift: {label: 'C', latex: 'C'}},
+                        {label: 'v', latex: 'v', shift: {label: 'V', latex: 'V'}},
+                        {label: 'b', latex: 'b', shift: {label: 'B', latex: 'B'}},
+                        {label: 'n', latex: 'n', shift: {label: 'N', latex: 'N'}},
+                        {label: 'm', latex: 'm', shift: {label: 'M', latex: 'M'}},
+                        {label: '[backspace]', width: 2},
+                    ],
+                    [
+                        {label: '[separator]', width: 10},
+                    ]
+                ],
+            },
+            {
+                label: '𝛼𝛽𝛾',
+                rows: [
+                    [
+                        {latex: '\\phi', shift: '\\Phi'}, {latex: '\\zeta', shift: '\\Zeta'},
+                        {latex: '\\varepsilon', shift: '\\Epsilon'}, {latex: '\\rho', shift: '\\Rho'},
+                        {latex: '\\tau', shift: '\\Tau'}, {latex: '\\upsilon', shift: '\\Upsilon'},
+                        {latex: '\\theta', shift: '\\Theta'}, {latex: '\\iota', shift: '\\Iota'},
+                        {latex: '\\omicron', shift: '\\Omicron'}, {latex: '\\pi', shift: '\\Pi'},
+                    ],
+                    [
+                        {latex: '\\alpha', shift: '\\Alpha'}, {latex: '\\sigma', shift: '\\Sigma'},
+                        {latex: '\\delta', shift: '\\Delta'}, {latex: '\\phi', shift: '\\Phi'},
+                        {latex: '\\gamma', shift: '\\Gamma'}, {latex: '\\eta', shift: '\\Eta'},
+                        {latex: '\\xi', shift: '\\Xi'}, {latex: '\\kappa', shift: '\\Kappa'},
+                        {latex: '\\lambda', shift: '\\Lambda'},
+                    ],
+                    [
+                        {label: '[shift]', width: 2},
+                        {latex: '\\chi', shift: '\\Chi'},
+                        {latex: '\\psi', shift: '\\Psi'}, {latex: '\\omega', shift: '\\Omega'},
+                        {latex: '\\beta', shift: '\\Beta'}, {latex: '\\nu', shift: '\\Nu'},
+                        {latex: '\\mu', shift: '\\Mu'},
+                        {label: '[backspace]', width: 2},
+                    ],
+                    [
+                        {label: '[separator]', width: 10},
+                    ]
                 ],
             }
         ];
     });
 </script>
 
-
-<script>
-    function sendDataToBot() {
-        const mathInput = document.getElementById('mathInput').getValue() + ';' + document.getElementById('uncertainties').getValue();
-        Telegram.WebApp.sendData(mathInput);
-    }
-</script>
 </body>
 </html>
