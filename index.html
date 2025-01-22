@@ -194,7 +194,7 @@
     }
 </script>
 
-<script>
+<!--<script>
     function checkIfEmpty() {
         const mathInput = document.getElementById('mathInput');
         const uncertaintiesInput = document.getElementById('uncertainties');
@@ -215,7 +215,7 @@
     document.getElementById('uncertainties').addEventListener('input', checkIfEmpty);
 
     checkIfEmpty();
-</script>
+</script>-->
 
 <script>
     async function checkVariables() {
@@ -225,11 +225,15 @@
         const formulaLatex = mathInput.getValue ? mathInput.getValue() : '';
         const uncertaintiesLatex = uncertaintiesInput.getValue ? uncertaintiesInput.getValue() : '';
 
+        const mathInputValue = mathInput.getValue().trim();
+        const uncertaintiesValue = uncertaintiesInput.getValue().trim();
+        console.log(mathInputValue + ',' + uncertaintiesValue);
+
         var formulaVariables = [];
         var uncertaintiesVariables = [];
 
         try {
-            const response = await fetch('https://physprak.bot.nu/api/process', {
+            const response = await fetch('https://iluvurmom.servebeer.com/api/process', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -244,6 +248,7 @@
                 const data = await response.json();
                 formulaVariables = data.formula.split( ', ' );
                 uncertaintiesVariables = data.uncertainties.split( ', ' );
+                console.log(formulaVariables + ';' + uncertaintiesVariables);
             } else {
                 console.log('Error processing request.');
             }
@@ -256,16 +261,29 @@
         const warningElement = document.getElementById('warning');
         const sendButton = document.getElementById('sendButton');
 
-        if (!allPresent) {
-            warningElement.classList.add('show');
+
+        if (mathInputValue=='' || uncertaintiesValue=='') {
             sendButton.disabled = true;
+            if (!allPresent) {
+                warningElement.classList.add('show');
+            } else {
+                warningElement.classList.remove('show');
+            }
         } else {
-            warningElement.classList.remove('show');
+            if (!allPresent) {
+                warningElement.classList.add('show');
+                sendButton.disabled = true;
+            } else {
+                warningElement.classList.remove('show');
+                sendButton.disabled = false;
+            }
         }
     }
 
     document.getElementById('mathInput').addEventListener('input', checkVariables);
     document.getElementById('uncertainties').addEventListener('input', checkVariables);
+
+    checkVariables();
 </script>
 
 <script>
